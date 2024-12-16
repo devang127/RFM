@@ -1,18 +1,23 @@
 
 import express from 'express';
+
 import cors from 'cors';
 import mongoose from 'mongoose';
 import morgan from 'morgan';
-import dotenv  from "dotenv"
+import dotenv from "dotenv";
+import powerbiRoutes from './routes/powerbiRoutes.js';
+
 
 import RecencyModel from './models/recencyModel.js';
-// import recencyRoutes from './routes/recencyRoutes.js';
+
 dotenv.config()
 const app = express();
 app.use(cors());
+
 app.use(express.json());
 app.use(morgan('dev'));
-// app.use('/Recency', recencyRoutes);
+app.use('/', powerbiRoutes);
+
 const PORT = process.env.PORT || 3001;
 
 app.listen(PORT, () => {
@@ -26,6 +31,52 @@ mongoose.connect(process.env.MONGODB_URI)
 .catch((err) => {
   console.error('Error connecting to MongoDB:', err);
 });
+
+// const powerbiConfig = {
+//   workspaceID: "8562e231-d603-4e16-bc6f-4369ac2b4e7b",
+//   datasetID: "e233492e-7921-4a5e-96fb-7ff5796ea7d7",
+//   accessToken: "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsIng1dCI6Inp4ZWcyV09OcFRrd041R21lWWN1VGR0QzZKMCIsImtpZCI6Inp4ZWcyV09OcFRrd041R21lWWN1VGR0QzZKMCJ9.eyJhdWQiOiJodHRwczovL2FuYWx5c2lzLndpbmRvd3MubmV0L3Bvd2VyYmkvYXBpIiwiaXNzIjoiaHR0cHM6Ly9zdHMud2luZG93cy5uZXQvYmY4ZmQwYTMtZWFiYi00YzJiLThkMGQtYWM2ZjcxMWI1OGQ0LyIsImlhdCI6MTczNDA5MjIwMSwibmJmIjoxNzM0MDkyMjAxLCJleHAiOjE3MzQwOTY2ODcsImFjY3QiOjAsImFjciI6IjEiLCJhaW8iOiJBVFFBeS84WUFBQUFaRzh6bzE5Zk94OE81ejN3b05UME5yS2txQnBMMlZWNWRCRk5kSklSRlpNNTdjdFJHbi80VTZnY1VFNDBhd3I1IiwiYW1yIjpbInB3ZCJdLCJhcHBpZCI6Ijg3MWMwMTBmLTVlNjEtNGZiMS04M2FjLTk4NjEwYTdlOTExMCIsImFwcGlkYWNyIjoiMCIsImZhbWlseV9uYW1lIjoic2F3YW50IiwiZ2l2ZW5fbmFtZSI6ImRldmFuZyIsImlkdHlwIjoidXNlciIsImlwYWRkciI6IjExMC4yMjYuMTc2LjYiLCJuYW1lIjoiZGV2YW5nICBzYXdhbnQiLCJvaWQiOiJhNTExN2RjMC0xYWM0LTQxZGUtOGY2OS01OTNkMjZlZTRkZTAiLCJwdWlkIjoiMTAwMzIwMDQxQkM1MTI3RiIsInJoIjoiMS5BY1lBbzlDUHY3dnFLMHlORGF4dmNSdFkxQWtBQUFBQUFBQUF3QUFBQUFBQUFBREdBTHZHQUEuIiwic2NwIjoidXNlcl9pbXBlcnNvbmF0aW9uIiwic3ViIjoicmxPRnRoREZsZmQtVlZuS3JidFN4UVUyNXdjWXNyWk9Ub2xXNFhHbDA2YyIsInRpZCI6ImJmOGZkMGEzLWVhYmItNGMyYi04ZDBkLWFjNmY3MTFiNThkNCIsInVuaXF1ZV9uYW1lIjoiZGV2YW5nc2F3YW50QG93bmVyNDQxLm9ubWljcm9zb2Z0LmNvbSIsInVwbiI6ImRldmFuZ3Nhd2FudEBvd25lcjQ0MS5vbm1pY3Jvc29mdC5jb20iLCJ1dGkiOiJlMnpfNUNSRzlrQ2g1cmt4SnRVNEFBIiwidmVyIjoiMS4wIiwid2lkcyI6WyI2MmU5MDM5NC02OWY1LTQyMzctOTE5MC0wMTIxNzcxNDVlMTAiLCJiNzlmYmY0ZC0zZWY5LTQ2ODktODE0My03NmIxOTRlODU1MDkiXSwieG1zX2lkcmVsIjoiMSA4IiwieG1zX3BsIjoiZW4ifQ.lgcaQuzczyhJT4OltsDru-dVAIzGLV5k-KGntYkGhZqCRKIxad7wbtGXkYdYOeriWTUCAZhBi70wzyPMGlPvWHc1h2U0osORT1zhtmhfg_IkHuhkd_pfuFO2Hj1_svrLJfvPPh2eHTptcfat_lupM6RnP535wczwUT_I5iq9iiRiIgC3E5P4IGeqEMiSYEW5ksD9_xBbNwmS79jtyiFcnChJxW9XLDA4tc1vcXlXHER2vPDtBntA1jhpEVRfPmm0YPwCDQEl6EBgYwfSquys4gAbAOJnyH5WEhP2KZcAH2Xa4HoYyQqblhjFgB9Pc1vxfxjz1vPp-XwP_Aa9OH1viQ",
+// }
+// app.post('/refresh-dataset', async (req, res) => {
+//   try {
+    
+//     const { workspaceId, datasetId, accessToken } = powerbiConfig;
+
+//     if (!workspaceId || !datasetId || !accessToken) {
+//       return res.status(500).json({ 
+//         error: 'PowerBI configuration missing' 
+//       });
+//     }
+
+//     const refreshUrl = `https://api.powerbi.com/v1.0/myorg/groups/${workspaceId}/datasets/${datasetId}/refreshes`;
+    
+//     const response = await fetch(refreshUrl, {
+//       method: 'POST',
+//       headers: {
+//         'Authorization': `Bearer ${accessToken}`,
+//         'Content-Type': 'application/json'
+//       }
+//     });
+
+//     if (!response.ok) {
+//       throw new Error(`PowerBI API responded with status: ${response.status}`);
+//     }
+
+//     const result = await response.json();
+//     res.json({ 
+//       success: true, 
+//       message: 'Dataset refresh triggered successfully',
+//       data: result 
+//     });
+
+//   } catch (error) {
+//     console.error('Error in PowerBI refresh:', error);
+//     res.status(500).json({ 
+//       success: false, 
+//       error: error.message 
+//     });
+//   }
+// });
 
 
 
@@ -70,6 +121,9 @@ mongoose.connect(process.env.MONGODB_URI)
 //     res.status(500).json({ message: error.message });
 //   }
 // });
+
+
+
 
 // {recency}
 
@@ -176,8 +230,6 @@ app.put('/Monetary', async (req, res) => {
   }
 })
 
-
-
-
-
 // {monetary}
+
+

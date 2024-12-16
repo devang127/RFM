@@ -4,6 +4,11 @@ import Navbar from '../components/Navbar';
 import Sidebar from '../components/Sidebar';
 import { Outlet } from "react-router-dom";
 import BASE_URL from '../BASE_URL';
+import { PowerBIEmbed } from 'powerbi-client-react';
+import { models } from 'powerbi-client';
+
+// import accessToken from '../config/powerbi'
+// import dataset_id from '../config/powerbi'
 import axios from 'axios';
 const Recency = () => {
   // {recency}    
@@ -108,6 +113,9 @@ const fetchRecencyData = async () =>{
 //   }
 // };
 
+
+
+
 // Handle PUT request for updating recency data
 const handleRecencySubmit = async (e) =>{
   e.preventDefault();
@@ -160,6 +168,7 @@ const handleRecencySubmit = async (e) =>{
       setRecencyRange(transformedData);
     }
     setError(null);
+    refreshPowerbi();
   } catch (err){
     setError('Failed to update recency data');
     console.error('Error updating data:', err);
@@ -201,9 +210,56 @@ const handleRecencySubmit = async (e) =>{
 //       setLoading(false);
 //   }
 // };
+// 
+
+const [status, setStatus] = useState('');
+const [jobId, setJobId] = useState(null);
+const [isLoading, setIsLoading] = useState(false);
+const refreshPowerbi = async () => {
+  try {
+            const response = await axios.post('/refresh-dataset');
+            setJobId(response.data.jobId);
+            setStatus('Refresh triggered successfully');
+            
+            // Optional: Start polling for status
+            if (response.data.jobId) {
+                startStatusPolling(response.data.jobId);
+            }
+        } catch (error) {
+            setError(error.response?.data?.error || 'Failed to refresh dataset');
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const startStatusPolling = async (jobId) => {
+      const checkStatus = async () => {
+          try {
+              const response = await axios.get(`/api/powerbi/refresh-status/${jobId}`);
+              setStatus(`Refresh status: ${response.data.status}`);
+
+              if (response.data.status === 'Completed') {
+                  return true;
+              }
+              return false;
+          } catch (error) {
+              setError('Failed to check refresh status');
+              return true;
+          }
+      };
+
+      // Poll every 5 seconds until completed or error
+      const pollInterval = setInterval(async () => {
+          const shouldStop = await checkStatus();
+          if (shouldStop) {
+              clearInterval(pollInterval);
+          }
+      }, 5000);
+  };
 
 useEffect(() => {
   fetchRecencyData();
+  refreshPowerbi();
 }, []);
     
     const handleRecencyChange = async (category, field, value) => {
@@ -414,6 +470,7 @@ const handleFrequencySubmit = async (e) => {
       setRanges(transformedData);
     }
     setErrorFrequency(null);
+    
   } catch (err) {
     setErrorFrequency('Failed to update recency data');
     console.error('Error updating data:', err);
@@ -598,6 +655,7 @@ const fetchMonetaryData = async () => {
       setMonetaryRange(transformedData);
     }
     setErrorMonetary(null);
+    
   } catch (err) {
     setErrorMonetary('Failed to fetch recency data');
     console.error('Error fetching data:', err);
@@ -1097,6 +1155,42 @@ return (
             </div>
             {/* {Monetary} */}
           </div>
+          <div className='w- h-'>
+            <PowerBIEmbed
+              embedConfig = {{
+                type: 'report',   // Supported types: report, dashboard, tile, visual, qna, paginated report and create
+                id: 'd58f9459-bd3f-40d0-a6a5-2a64393f6f3e',
+                embedUrl: "https://app.powerbi.com/reportEmbed?reportId=d58f9459-bd3f-40d0-a6a5-2a64393f6f3e&groupId=8562e231-d603-4e16-bc6f-4369ac2b4e7b&w=2&config=eyJjbHVzdGVyVXJsIjoiaHR0cHM6Ly9XQUJJLUlORElBLUNFTlRSQUwtQS1QUklNQVJZLXJlZGlyZWN0LmFuYWx5c2lzLndpbmRvd3MubmV0IiwiZW1iZWRGZWF0dXJlcyI6eyJ1c2FnZU1ldHJpY3NWTmV4dCI6dHJ1ZX19",
+                accessToken: 'eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsIng1dCI6Inp4ZWcyV09OcFRrd041R21lWWN1VGR0QzZKMCIsImtpZCI6Inp4ZWcyV09OcFRrd041R21lWWN1VGR0QzZKMCJ9.eyJhdWQiOiJodHRwczovL2FuYWx5c2lzLndpbmRvd3MubmV0L3Bvd2VyYmkvYXBpIiwiaXNzIjoiaHR0cHM6Ly9zdHMud2luZG93cy5uZXQvYmY4ZmQwYTMtZWFiYi00YzJiLThkMGQtYWM2ZjcxMWI1OGQ0LyIsImlhdCI6MTczNDMyNzI3NiwibmJmIjoxNzM0MzI3Mjc2LCJleHAiOjE3MzQzMzE5MzEsImFjY3QiOjAsImFjciI6IjEiLCJhaW8iOiJBVFFBeS84WUFBQUFiZSs3NTVmSjFGK2VwQytGckYzbmdTVW45b212R2R6TklwYUVIOUFLMHRXdDRFeWlvdkRpdVZXSC9ic3RaUWdFIiwiYW1yIjpbInB3ZCJdLCJhcHBpZCI6Ijg3MWMwMTBmLTVlNjEtNGZiMS04M2FjLTk4NjEwYTdlOTExMCIsImFwcGlkYWNyIjoiMCIsImZhbWlseV9uYW1lIjoic2F3YW50IiwiZ2l2ZW5fbmFtZSI6ImRldmFuZyIsImlkdHlwIjoidXNlciIsImlwYWRkciI6IjExMC4yMjYuMTc2LjYiLCJuYW1lIjoiZGV2YW5nICBzYXdhbnQiLCJvaWQiOiJhNTExN2RjMC0xYWM0LTQxZGUtOGY2OS01OTNkMjZlZTRkZTAiLCJwdWlkIjoiMTAwMzIwMDQxQkM1MTI3RiIsInJoIjoiMS5BY1lBbzlDUHY3dnFLMHlORGF4dmNSdFkxQWtBQUFBQUFBQUF3QUFBQUFBQUFBREdBTHZHQUEuIiwic2NwIjoidXNlcl9pbXBlcnNvbmF0aW9uIiwic2lnbmluX3N0YXRlIjpbImttc2kiXSwic3ViIjoicmxPRnRoREZsZmQtVlZuS3JidFN4UVUyNXdjWXNyWk9Ub2xXNFhHbDA2YyIsInRpZCI6ImJmOGZkMGEzLWVhYmItNGMyYi04ZDBkLWFjNmY3MTFiNThkNCIsInVuaXF1ZV9uYW1lIjoiZGV2YW5nc2F3YW50QG93bmVyNDQxLm9ubWljcm9zb2Z0LmNvbSIsInVwbiI6ImRldmFuZ3Nhd2FudEBvd25lcjQ0MS5vbm1pY3Jvc29mdC5jb20iLCJ1dGkiOiJ4ejRGRVd0LU8wMjFxOXBNSURfVEFBIiwidmVyIjoiMS4wIiwid2lkcyI6WyI2MmU5MDM5NC02OWY1LTQyMzctOTE5MC0wMTIxNzcxNDVlMTAiLCJiNzlmYmY0ZC0zZWY5LTQ2ODktODE0My03NmIxOTRlODU1MDkiXSwieG1zX2lkcmVsIjoiMSAyOCIsInhtc19wbCI6ImVuIn0.n50_i4RttbFIcBXnAqIFEDbuXWfsxVeOOxOypNIYeS1JZMe3nkEDcSF6Ib0iqmKdw1Qm_jaQNwSiJPn_8dS_wzti1ffyoAexszx6yx78CzAs08mNDZqplm66g0KoCHLa2YfYKXGQp5ACjsqsdqHI9at-QWnOzoo9SPRySdx_Z1jCBQ946YYsuW_7y_oFdwq6cDuWd0vX5yh2O9FX9GRJIIJBedeRJOgFWQDiGG2YRLdLnb_XjM7CXtvYDPp-E3pJe971uHvHTocbOsCoQ-cA_aj_u8JWVKWrILENtCjcT4ktZZI70uyJCQgiZpNWZ51PpTQ47ktfVy8EXNpp6_5bAA',
+                tokenType: models.TokenType.Aad, // Use models.TokenType.Aad for SaaS embed
+                settings: {
+                  panes: {
+                    filters: {
+                      expanded: false,
+                      visible: false
+                    }
+                  },
+                  background: models.BackgroundType.Transparent,
+                }
+              }}
+              
+              eventHandlers = {
+                new Map([
+                  ['loaded', function () {console.log('Report loaded');}],
+                  ['rendered', function () {console.log('Report rendered');}],
+                  ['error', function (event) {console.log(event.detail);}],
+                  ['visualClicked', () => console.log('visual clicked')],
+                  ['pageChanged', (event) => console.log(event)],
+                ])
+              }
+
+              cssClassName = { " flex justify-center mt-4 h-screen w-screen" }
+
+              getEmbeddedComponent = { (embeddedReport) => {
+                window.report = embeddedReport;
+              }}
+            />
+            </div>
         </div>
     {/* </div> */}
     </>

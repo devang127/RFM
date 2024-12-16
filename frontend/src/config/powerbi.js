@@ -1,6 +1,3 @@
-PORT = 3001
-MONGODB_URI = "mongodb+srv://devangsawant127:reyna9930@scoringtable.7f6of.mongodb.net/"
-
 workspace_id= "8562e231-d603-4e16-bc6f-4369ac2b4e7b",
 dataset_id= "e233492e-7921-4a5e-96fb-7ff5796ea7d7",
 api_url= "https://api.powerbi.com/v1.0/myorg"
